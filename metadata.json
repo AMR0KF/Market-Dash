@@ -1,0 +1,5 @@
+{
+  "name": "MarketDash",
+  "description": "A full-stack supermarket delivery app with React, Express, PostgreSQL, and Prisma.",
+  "requestFramePermissions": []
+}

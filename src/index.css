@@ -1,0 +1,121 @@
+@import "tailwindcss";
+
+@theme {
+  /* Maison M Theme - Charcoal Black, Gold Accents, Warm Wood */
+  --color-white: #1C1C1C; /* Cards, panels */
+  --color-black: #F5F5F5;
+  
+  /* Gray palette -> Charcoal / Dark mode grays */
+  --color-gray-50: #121212; /* App background */
+  --color-gray-100: #2A2A2A; /* Image placeholders, light bg */
+  --color-gray-200: #333333; /* Borders, search bar */
+  --color-gray-300: #444444;
+  --color-gray-400: #666666; /* Disabled text, placeholders */
+  --color-gray-500: #A0A0A0; /* Secondary text */
+  --color-gray-600: #B3B3B3;
+  --color-gray-700: #CCCCCC;
+  --color-gray-800: #E0E0E0;
+  --color-gray-900: #F5F5F5; /* Primary text */
+
+  /* Green palette -> Gold / Warm Wood */
+  --color-green-50: #3A3219; /* Light gold tint for bg/buttons */
+  --color-green-100: #4A4020;
+  --color-green-200: #5C4A1E;
+  --color-green-300: #8B732B;
+  --color-green-400: #B89938;
+  --color-green-500: #D4AF37; /* Primary Gold */
+  --color-green-600: #C5A059; /* Slightly darker gold for buttons */
+  --color-green-700: #A6803C;
+  --color-green-800: #8B5A2B; /* Warm Wood */
+  --color-green-900: #5C3A18;
+
+  /* Red palette -> Warm Wood / Copper for Sale badges and destructive actions */
+  --color-red-50: #2A1A1A;
+  --color-red-100: #3A2020;
+  --color-red-200: #4A2A2A;
+  --color-red-300: #5A3030;
+  --color-red-400: #D47A7A; /* Light copper for text */
+  --color-red-500: #C25A5A; /* Medium copper */
+  --color-red-600: #A04040; /* Dark copper for buttons */
+  --color-red-700: #8B3A3A;
+
+  /* Blue palette -> Deep Navy / Slate for info and processing states */
+  --color-blue-50: #1A202C;
+  --color-blue-100: #2D3748;
+  --color-blue-200: #4A5568;
+  --color-blue-300: #718096;
+  --color-blue-400: #A0AEC0;
+  --color-blue-500: #CBD5E0;
+  --color-blue-600: #E2E8F0;
+  --color-blue-700: #EDF2F7;
+  --color-blue-800: #F7FAFC;
+
+  /* Yellow palette -> Muted Bronze / Dark Gold for pending states */
+  --color-yellow-50: #2C2614;
+  --color-yellow-100: #3D351C;
+  --color-yellow-200: #5C502A;
+  --color-yellow-300: #8A783F;
+  --color-yellow-400: #B8A054;
+  --color-yellow-500: #D4B86A;
+  --color-yellow-600: #E0C98C;
+  --color-yellow-700: #EBD9AE;
+  --color-yellow-800: #F5EAD0;
+
+  /* Orange palette -> Muted Terracotta / Rust for out for delivery states */
+  --color-orange-50: #2A1D18;
+  --color-orange-100: #3A2820;
+  --color-orange-200: #5A3D30;
+  --color-orange-300: #8A5D4A;
+  --color-orange-400: #B87D64;
+  --color-orange-500: #D49073;
+  --color-orange-600: #E0A890;
+  --color-orange-700: #EBC0AD;
+  --color-orange-800: #F5D8CB;
+
+  /* Purple palette -> Muted Plum / Deep Burgundy for shipped/preparing states */
+  --color-purple-50: #261A26;
+  --color-purple-100: #362436;
+  --color-purple-200: #543854;
+  --color-purple-300: #805580;
+  --color-purple-400: #AB72AB;
+  --color-purple-500: #C48BC4;
+  --color-purple-600: #D4A6D4;
+  --color-purple-700: #E3C2E3;
+  --color-purple-800: #F1DEF1;
+}
+
+@layer base {
+  html, body {
+    @apply overflow-x-hidden text-[16px] bg-gray-50 text-gray-900;
+  }
+  
+  input, textarea, select {
+    @apply text-[16px] bg-white text-gray-900 border-gray-200;
+  }
+
+  @media (max-width: 768px) {
+    ::-webkit-scrollbar {
+      display: none;
+    }
+    * {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  }
+}
+
+@layer utilities {
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .pt-safe {
+    padding-top: env(safe-area-inset-top);
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
