@@ -3,8 +3,24 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { prisma } from '../prisma';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key';
-const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'your-super-secret-refresh-key';
+const getJwtSecret = (): string => {
+  if (process.env.JWT_SECRET) return process.env.JWT_SECRET;
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('FATAL: JWT_SECRET environment variable must be set in production!');
+  }
+  return 'dev-secret-jwt-key-do-not-use-in-production';
+};
+
+const getJwtRefreshSecret = (): string => {
+  if (process.env.JWT_REFRESH_SECRET) return process.env.JWT_REFRESH_SECRET;
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('FATAL: JWT_REFRESH_SECRET environment variable must be set in production!');
+  }
+  return 'dev-secret-refresh-key-do-not-use-in-production';
+};
+
+const JWT_SECRET = getJwtSecret();
+const JWT_REFRESH_SECRET = getJwtRefreshSecret();
 
 const generateTokens = (userId: string, role: string) => {
   const accessToken = jwt.sign({ id: userId, role }, JWT_SECRET, { expiresIn: '15m' });

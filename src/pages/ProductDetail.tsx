@@ -10,7 +10,7 @@ export default function ProductDetail() {
   const { data: product, isLoading } = useProduct(id || '');
   const { data: relatedProductsData } = useProducts({ category: product?.categoryId, limit: 5 });
   
-  const { items, handleAddItem, handleUpdateItem } = useCart();
+  const { items, handleAddItem, handleUpdateItem, isPending } = useCart();
   const [quantity, setQuantity] = useState(1);
   const [activeImage, setActiveImage] = useState(0);
 
@@ -25,8 +25,10 @@ export default function ProductDetail() {
   const cartItem = items.find(item => item.productId === product.id);
   const quantityInCart = cartItem ? cartItem.quantity : 0;
   const isOutOfStock = product.stock <= 0;
+  const isItemPending = isPending(product.id) || (cartItem ? isPending(cartItem.id) : false);
 
   const handleAddToCart = () => {
+    if (isItemPending) return;
     if (quantityInCart > 0) {
       handleUpdateItem(cartItem!.id, quantityInCart + quantity);
     } else {
@@ -154,11 +156,11 @@ export default function ProductDetail() {
                 
                 <button 
                   onClick={handleAddToCart}
-                  disabled={isOutOfStock}
+                  disabled={isOutOfStock || isItemPending}
                   className={`flex-1 flex items-center justify-center gap-2 h-[56px] rounded-xl font-bold text-lg transition-colors ${
-                    isOutOfStock 
-                      ? 'bg-gray-200 text-gray-500 cursor-not-allowed' 
-                      : 'bg-green-600 text-white hover:bg-green-700 shadow-md hover:shadow-lg'
+                    isOutOfStock || isItemPending
+                      ? 'bg-gray-200 text-gray-500 cursor-not-allowed opacity-50' 
+                      : 'bg-green-600 hover:bg-green-700 text-white shadow-lg shadow-green-600/20'
                   }`}
                 >
                   <ShoppingCart size={24} />

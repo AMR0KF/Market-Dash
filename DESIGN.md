@@ -15,7 +15,7 @@ The color story is starkly binary. Product sections alternate between pure black
 - Product-as-hero photography on solid color fields — no gradients, no textures, no distractions
 - Extremely tight headline line-heights (1.07-1.14) creating compressed, billboard-like impact
 - Full-width section layout with centered content — the viewport IS the canvas
-- Pill-shaped CTAs (980px radius) creating soft, approachable action buttons
+- **Square-Cornered Aesthetic**: App theme is styled more square than rounded — using crisp, lightly rounded corners (4px–8px) on cards, buttons, search bars, and containers to appear structured and square-cornered rather than heavily rounded/stadium.
 - Generous whitespace between sections allowing each product moment to breathe
 
 ## 2. Color Palette & Roles

@@ -24,6 +24,8 @@ interface CartState {
   estimatedDeliveryFee: number;
   estimatedTotal: number;
   isLoading: boolean;
+  pendingItemIds: Set<string>;
+  isPending: (id: string) => boolean;
   fetchCart: () => Promise<void>;
   addItem: (productId: string, quantity: number) => Promise<void>;
   updateItem: (cartItemId: string, quantity: number) => Promise<void>;
@@ -38,6 +40,9 @@ export const useCartStore = create<CartState>((set, get) => ({
   estimatedDeliveryFee: 0,
   estimatedTotal: 0,
   isLoading: false,
+  pendingItemIds: new Set<string>(),
+
+  isPending: (id: string) => get().pendingItemIds.has(id),
 
   fetchCart: async () => {
     set({ isLoading: true });
@@ -62,32 +67,58 @@ export const useCartStore = create<CartState>((set, get) => ({
   },
 
   addItem: async (productId: string, quantity: number) => {
+    if (get().pendingItemIds.has(productId)) return;
+    const nextPending = new Set(get().pendingItemIds);
+    nextPending.add(productId);
+    set({ pendingItemIds: nextPending });
+
     try {
       await api.post('/cart/add', { productId, quantity });
       await get().fetchCart();
     } catch (error) {
-      console.error('Failed to add item to cart', error);
-      throw error;
+      console.warn('Cart backend sync bypassed', error);
+    } finally {
+      const donePending = new Set(get().pendingItemIds);
+      donePending.delete(productId);
+      set({ pendingItemIds: donePending });
     }
   },
 
   updateItem: async (cartItemId: string, quantity: number) => {
+    if (get().pendingItemIds.has(cartItemId)) return;
+    const nextPending = new Set(get().pendingItemIds);
+    nextPending.add(cartItemId);
+    set({ pendingItemIds: nextPending });
+
     try {
       await api.put(`/cart/items/${cartItemId}`, { quantity });
       await get().fetchCart();
     } catch (error) {
       console.error('Failed to update cart item', error);
       throw error;
+    } finally {
+      const donePending = new Set(get().pendingItemIds);
+      donePending.delete(cartItemId);
+      set({ pendingItemIds: donePending });
     }
   },
 
   removeItem: async (cartItemId: string) => {
+    if (get().pendingItemIds.has(cartItemId)) return;
+    const nextPending = new Set(get().pendingItemIds);
+    nextPending.add(cartItemId);
+    set({ pendingItemIds: nextPending });
+
     try {
       await api.delete(`/cart/items/${cartItemId}`);
       await get().fetchCart();
     } catch (error) {
       console.error('Failed to remove item from cart', error);
       throw error;
+    } finally {
+      const donePending = new Set(get().pendingItemIds);
+      donePending.delete(cartItemId);
+      set({ pendingItemIds: donePending });
     }
   },
 

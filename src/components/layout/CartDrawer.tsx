@@ -1,12 +1,12 @@
 import { X, Plus, Minus, ShoppingBag } from 'lucide-react';
-import { useCartStore } from '../../store/cartStore';
+import { useCart } from '../../hooks/useCart';
 import { useUiStore } from '../../store/uiStore';
 import { useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
 
 export default function CartDrawer() {
   const { isCartOpen, toggleCart } = useUiStore();
-  const { items, subtotal, estimatedDeliveryFee, estimatedTotal, updateItem, removeItem, fetchCart } = useCartStore();
+  const { items, subtotal, estimatedDeliveryFee, estimatedTotal, handleUpdateItem, handleRemoveItem, fetchCart, isPending } = useCart();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -89,9 +89,10 @@ export default function CartDrawer() {
                         <h3 className="font-medium text-gray-900 line-clamp-2">{item.product.name}</h3>
                         <p className="text-sm text-gray-500 mt-0.5 truncate">${item.product.price.toFixed(2)} / {item.product.unit}</p>
                       </div>
-                      <button 
-                        onClick={() => removeItem(item.id)}
-                        className="text-gray-400 hover:text-red-500 p-2 min-h-[44px] min-w-[44px] flex items-center justify-center -mr-2 -mt-2"
+                      <button
+                        onClick={() => !isPending(item.id) && handleRemoveItem(item.id)}
+                        disabled={isPending(item.id)}
+                        className="text-gray-400 hover:text-red-500 p-2 min-h-[44px] min-w-[44px] flex items-center justify-center -mr-2 -mt-2 disabled:opacity-40"
                       >
                         <X className="h-5 w-5" />
                       </button>
@@ -99,16 +100,18 @@ export default function CartDrawer() {
                     
                     <div className="flex items-center justify-between mt-2">
                       <div className="flex items-center border border-gray-200 rounded-xl h-[44px]">
-                        <button 
-                          onClick={() => updateItem(item.id, item.quantity - 1)}
-                          className="w-10 h-full flex items-center justify-center text-gray-500 hover:text-green-600 hover:bg-green-50 rounded-l-xl transition-colors"
+                        <button
+                          onClick={() => !isPending(item.id) && handleUpdateItem(item.id, item.quantity - 1)}
+                          disabled={isPending(item.id)}
+                          className="w-10 h-full flex items-center justify-center text-gray-500 hover:text-green-600 hover:bg-green-50 rounded-l-xl transition-colors disabled:opacity-40"
                         >
                           <Minus className="h-4 w-4" />
                         </button>
                         <span className="w-8 text-center text-sm font-medium">{item.quantity}</span>
-                        <button 
-                          onClick={() => updateItem(item.id, item.quantity + 1)}
-                          className="w-10 h-full flex items-center justify-center text-gray-500 hover:text-green-600 hover:bg-green-50 rounded-r-xl transition-colors"
+                        <button
+                          onClick={() => !isPending(item.id) && handleUpdateItem(item.id, item.quantity + 1)}
+                          disabled={item.quantity >= item.product.stock || isPending(item.id)}
+                          className="w-10 h-full flex items-center justify-center text-gray-500 hover:text-green-600 hover:bg-green-50 rounded-r-xl transition-colors disabled:opacity-40"
                         >
                           <Plus className="h-4 w-4" />
                         </button>

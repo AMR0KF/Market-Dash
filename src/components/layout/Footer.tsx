@@ -74,29 +74,31 @@ export default function Footer() {
             </ul>
           </div>
 
-          <div>
-            <h3 className="font-semibold text-gray-900 mb-4">Dev Tools</h3>
-            <ul className="space-y-3 text-sm text-gray-500">
-              <li>
-                <button 
-                  onClick={handleSeed} 
-                  disabled={isLoading}
-                  className="flex items-center gap-2 text-blue-600 hover:text-blue-700 transition-colors disabled:opacity-50 min-h-[44px]"
-                >
-                  <Database className="w-4 h-4" /> Seed Dummy Data
-                </button>
-              </li>
-              <li>
-                <button 
-                  onClick={handleClear} 
-                  disabled={isLoading}
-                  className="flex items-center gap-2 text-red-600 hover:text-red-700 transition-colors disabled:opacity-50 min-h-[44px]"
-                >
-                  <Trash2 className="w-4 h-4" /> Clear Dummy Data
-                </button>
-              </li>
-            </ul>
-          </div>
+          {process.env.NODE_ENV !== 'production' && (
+            <div>
+              <h3 className="font-semibold text-gray-900 mb-4">Dev Tools</h3>
+              <ul className="space-y-3 text-sm text-gray-500">
+                <li>
+                  <button 
+                    onClick={handleSeed} 
+                    disabled={isLoading}
+                    className="flex items-center gap-2 text-blue-600 hover:text-blue-700 transition-colors disabled:opacity-50 min-h-[44px]"
+                  >
+                    <Database className="w-4 h-4" /> Seed Dummy Data
+                  </button>
+                </li>
+                <li>
+                  <button 
+                    onClick={handleClear} 
+                    disabled={isLoading}
+                    className="flex items-center gap-2 text-red-600 hover:text-red-700 transition-colors disabled:opacity-50 min-h-[44px]"
+                  >
+                    <Trash2 className="w-4 h-4" /> Clear Dummy Data
+                  </button>
+                </li>
+              </ul>
+            </div>
+          )}
         </div>
         
         <div className="pt-8 border-t border-gray-100 flex flex-col md:flex-row justify-between items-center gap-4">

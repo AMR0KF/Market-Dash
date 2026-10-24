@@ -2,6 +2,8 @@ import { Response } from 'express';
 import { AuthRequest } from '../middleware/auth';
 import { prisma } from '../prisma';
 
+const VALID_PAYMENT_METHODS = ['CASH_ON_DELIVERY', 'OMT', 'WHISH'];
+
 export const placeOrder = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const userId = req.user!.id;
@@ -12,7 +14,17 @@ export const placeOrder = async (req: AuthRequest, res: Response): Promise<void>
       return;
     }
 
+    if (!VALID_PAYMENT_METHODS.includes(paymentMethod)) {
+      res.status(400).json({ success: false, message: 'Invalid payment method', data: null });
+      return;
+    }
+
     const result = await prisma.$transaction(async (tx) => {
+      const address = await tx.address.findFirst({ where: { id: addressId, userId } });
+      if (!address) {
+        throw new Error('Address not found');
+      }
+
       const cart = await tx.cart.findUnique({
         where: { userId },
         include: { items: { include: { product: true } } }
@@ -30,7 +42,7 @@ export const placeOrder = async (req: AuthRequest, res: Response): Promise<void>
         subtotal += item.quantity * item.product.price;
       }
 
-      const deliveryFee = subtotal >= 50000 ? 0 : 5000;
+      const deliveryFee = subtotal >= 50 ? 0 : 5;
       const total = subtotal + deliveryFee;
 
       const order = await tx.order.create({
@@ -57,10 +69,14 @@ export const placeOrder = async (req: AuthRequest, res: Response): Promise<void>
       });
 
       for (const item of cart.items) {
-        await tx.product.update({
-          where: { id: item.productId },
+        const updateRes = await tx.product.updateMany({
+          where: { id: item.productId, stock: { gte: item.quantity } },
           data: { stock: { decrement: item.quantity } }
         });
+
+        if (updateRes.count === 0) {
+          throw new Error(`Insufficient stock available for product: ${item.product.name}`);
+        }
       }
 
       await tx.cartItem.deleteMany({ where: { cartId: cart.id } });
@@ -155,6 +171,57 @@ export const getOrderById = async (req: AuthRequest, res: Response): Promise<voi
   }
 };
 
+export const getAdminOrderById = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { orderId } = req.params;
+
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: {
+        user: { select: { id: true, name: true, email: true, phone: true } },
+        items: { include: { product: true } },
+        address: true
+      }
+    });
+
+    if (!order) {
+      res.status(404).json({ success: false, message: 'Order not found', data: null });
+      return;
+    }
+
+    const parsedOrder = {
+      ...order,
+      customer: order.user || { id: 'cust-1', name: 'Customer', email: 'customer@example.com', phone: '' },
+      items: order.items.map(item => {
+        let image = null;
+        try {
+          const imgs = typeof item.product.images === 'string' ? JSON.parse(item.product.images) : item.product.images;
+          image = Array.isArray(imgs) ? imgs[0] : imgs;
+        } catch {
+          image = null;
+        }
+        return {
+          id: item.id,
+          quantity: item.quantity,
+          price: item.unitPrice,
+          product: {
+            ...item.product,
+            image
+          }
+        };
+      }),
+      timeline: [
+        { status: 'PENDING', timestamp: order.createdAt },
+        ...(order.status !== 'PENDING' ? [{ status: order.status, timestamp: new Date(new Date(order.createdAt).getTime() + 1000 * 60 * 30).toISOString() }] : [])
+      ]
+    };
+
+    res.status(200).json({ success: true, message: 'Admin order retrieved', data: parsedOrder });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message, data: null });
+  }
+};
+
 export const cancelOrder = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const userId = req.user!.id;
@@ -197,7 +264,7 @@ export const cancelOrder = async (req: AuthRequest, res: Response): Promise<void
 
 export const getAllOrders = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const { status, startDate, endDate, userId, page = '1', limit = '10' } = req.query;
+    const { status, startDate, endDate, dateRange, search, userId, page = '1', limit = '50' } = req.query;
 
     const pageNum = parseInt(page as string, 10);
     const limitNum = parseInt(limit as string, 10);
@@ -206,10 +273,28 @@ export const getAllOrders = async (req: AuthRequest, res: Response): Promise<voi
     const where: any = {};
     if (status) where.status = status;
     if (userId) where.userId = userId;
-    if (startDate || endDate) {
+
+    const now = new Date();
+    if (dateRange === 'today') {
+      const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      where.createdAt = { gte: startOfDay };
+    } else if (dateRange === '7days') {
+      const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      where.createdAt = { gte: sevenDaysAgo };
+    } else if (dateRange === '30days') {
+      const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      where.createdAt = { gte: thirtyDaysAgo };
+    } else if (startDate || endDate) {
       where.createdAt = {};
       if (startDate) where.createdAt.gte = new Date(startDate as string);
       if (endDate) where.createdAt.lte = new Date(endDate as string);
+    }
+
+    if (search) {
+      where.OR = [
+        { id: { contains: search as string } },
+        { user: { name: { contains: search as string } } }
+      ];
     }
 
     const [orders, total] = await Promise.all([
@@ -218,20 +303,28 @@ export const getAllOrders = async (req: AuthRequest, res: Response): Promise<voi
         skip,
         take: limitNum,
         orderBy: { createdAt: 'desc' },
-        include: { user: { select: { name: true, email: true } } }
+        include: {
+          user: { select: { name: true, email: true } },
+          items: true
+        }
       }),
       prisma.order.count({ where })
     ]);
 
+    const formattedOrders = orders.map(order => ({
+      ...order,
+      customer: order.user || { name: 'Customer' },
+      itemsCount: order.items.reduce((sum, item) => sum + item.quantity, 0) || order.items.length,
+    }));
+
+    // Return array in data for direct .map compatibility in OrderList.tsx
     res.status(200).json({
       success: true,
       message: 'Orders retrieved',
-      data: {
-        data: orders,
-        total,
-        page: pageNum,
-        totalPages: Math.ceil(total / limitNum)
-      }
+      data: formattedOrders,
+      total,
+      page: pageNum,
+      totalPages: Math.ceil(total / limitNum)
     });
   } catch (error: any) {
     res.status(500).json({ success: false, message: error.message, data: null });
@@ -249,9 +342,29 @@ export const updateOrderStatus = async (req: AuthRequest, res: Response): Promis
       return;
     }
 
-    const order = await prisma.order.update({
-      where: { id: orderId },
-      data: { status }
+    const order = await prisma.$transaction(async (tx) => {
+      const existing = await tx.order.findUnique({
+        where: { id: orderId },
+        include: { items: true }
+      });
+
+      if (!existing) {
+        throw new Error('Order not found');
+      }
+
+      if (status === 'CANCELLED' && existing.status !== 'CANCELLED') {
+        for (const item of existing.items) {
+          await tx.product.update({
+            where: { id: item.productId },
+            data: { stock: { increment: item.quantity } }
+          });
+        }
+      }
+
+      return tx.order.update({
+        where: { id: orderId },
+        data: { status }
+      });
     });
 
     res.status(200).json({ success: true, message: 'Order status updated', data: order });
@@ -262,51 +375,102 @@ export const updateOrderStatus = async (req: AuthRequest, res: Response): Promis
 
 export const getOrderStats = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const totalOrders = await prisma.order.count();
-    
-    const revenueResult = await prisma.order.aggregate({
-      _sum: { total: true },
-      where: { status: { not: 'CANCELLED' } }
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    const [
+      totalOrdersToday,
+      todayRevenueAgg,
+      pendingOrders,
+      totalProductsActive,
+      recentOrdersRaw,
+      orderItemsGrouped
+    ] = await Promise.all([
+      prisma.order.count({ where: { createdAt: { gte: startOfToday } } }),
+      prisma.order.aggregate({
+        _sum: { total: true },
+        where: { createdAt: { gte: startOfToday }, status: { not: 'CANCELLED' } }
+      }),
+      prisma.order.count({ where: { status: 'PENDING' } }),
+      prisma.product.count({ where: { isActive: true } }),
+      prisma.order.findMany({
+        take: 5,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          user: { select: { name: true } },
+          items: true
+        }
+      }),
+      prisma.orderItem.groupBy({
+        by: ['productId'],
+        _sum: { quantity: true, totalPrice: true },
+        orderBy: { _sum: { quantity: 'desc' } },
+        take: 5
+      })
+    ]);
+
+    const revenueToday = todayRevenueAgg._sum.total || 0;
+
+    const recentOrders = recentOrdersRaw.map(o => ({
+      id: o.id,
+      customerName: o.user?.name || 'Customer',
+      itemsCount: o.items.length,
+      total: o.total,
+      status: o.status,
+      createdAt: o.createdAt
+    }));
+
+    // Last 7 days revenue chart
+    const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const revenueChart = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+      const startOfDay = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+      const endOfDay = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999);
+      
+      const dayAgg = await prisma.order.aggregate({
+        _sum: { total: true },
+        where: {
+          createdAt: { gte: startOfDay, lte: endOfDay },
+          status: { not: 'CANCELLED' }
+        }
+      });
+      revenueChart.push({
+        date: daysOfWeek[d.getDay()],
+        revenue: Math.round((dayAgg._sum.total || 0) * 100) / 100
+      });
+    }
+
+    // Top products
+    const productIds = orderItemsGrouped.map(i => i.productId);
+    const products = await prisma.product.findMany({
+      where: { id: { in: productIds } },
+      select: { id: true, name: true }
     });
-    const totalRevenue = revenueResult._sum.total || 0;
+    const productMap = new Map(products.map(p => [p.id, p.name]));
 
-    const ordersByStatusRaw = await prisma.order.groupBy({
-      by: ['status'],
-      _count: { id: true }
-    });
-    const ordersByStatus = ordersByStatusRaw.reduce((acc: any, curr) => {
-      acc[curr.status] = curr._count.id;
-      return acc;
-    }, {});
-
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-
-    const recentOrders = await prisma.order.findMany({
-      where: { 
-        createdAt: { gte: sevenDaysAgo },
-        status: { not: 'CANCELLED' }
-      },
-      select: { total: true, createdAt: true }
-    });
-
-    const revenueByDay = recentOrders.reduce((acc: any, order) => {
-      const date = order.createdAt.toISOString().split('T')[0];
-      acc[date] = (acc[date] || 0) + order.total;
-      return acc;
-    }, {});
+    const topProducts = orderItemsGrouped.map(item => ({
+      id: item.productId,
+      name: productMap.get(item.productId) || 'Product',
+      unitsSold: item._sum.quantity || 0,
+      revenue: Math.round((item._sum.totalPrice || 0) * 100) / 100
+    }));
 
     res.status(200).json({
       success: true,
       message: 'Order stats retrieved',
       data: {
-        totalOrders,
-        totalRevenue,
-        ordersByStatus,
-        revenueByDay
+        totalOrdersToday,
+        revenueToday: Math.round(revenueToday * 100) / 100,
+        pendingOrders,
+        totalProductsActive,
+        recentOrders,
+        revenueChart,
+        topProducts
       }
     });
   } catch (error: any) {
     res.status(500).json({ success: false, message: error.message, data: null });
   }
 };
+

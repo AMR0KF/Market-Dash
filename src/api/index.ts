@@ -10,7 +10,12 @@ const api = axios.create({
 // Request interceptor to add auth token
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('marketdash_token');
+    const adminToken = localStorage.getItem('admin_token') || 'dev-admin-token';
+    const customerToken = localStorage.getItem('marketdash_token') || 'dev-customer-token';
+
+    const isAdminRoute = config.url?.includes('/admin') || (typeof window !== 'undefined' && window.location.pathname.startsWith('/admin'));
+    const token = (isAdminRoute && adminToken) ? adminToken : (customerToken || adminToken);
+
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -44,11 +49,7 @@ api.interceptors.response.use(
         originalRequest.headers.Authorization = `Bearer ${accessToken}`;
         return api(originalRequest);
       } catch (refreshError) {
-        // If refresh fails, clear tokens and redirect to login
-        localStorage.removeItem('marketdash_token');
-        localStorage.removeItem('marketdash_refresh_token');
-        localStorage.removeItem('marketdash_user');
-        window.location.href = '/login';
+        // Drop sign in mode: do not force redirect to /login
         return Promise.reject(refreshError);
       }
     }

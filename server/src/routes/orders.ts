@@ -3,6 +3,7 @@ import {
   placeOrder,
   getMyOrders,
   getOrderById,
+  getAdminOrderById,
   cancelOrder,
   getAllOrders,
   updateOrderStatus,
@@ -23,6 +24,7 @@ router.post('/my-orders/:orderId/cancel', cancelOrder);
 // Admin routes
 router.get('/admin/all', adminOnly, getAllOrders);
 router.get('/admin/stats', adminOnly, getOrderStats);
+router.get('/admin/:orderId', adminOnly, getAdminOrderById);
 router.put('/admin/:orderId/status', adminOnly, updateOrderStatus);
 
 export default router;

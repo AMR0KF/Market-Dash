@@ -1,11 +1,9 @@
 import express from 'express';
 import { getCustomers } from '../controllers/adminController';
+import { authenticate, adminOnly } from '../middleware/auth';
 
 const router = express.Router();
 
-// In a real app, you would have an admin middleware here as well
-// router.use(protect, admin);
-
-router.get('/customers', getCustomers);
+router.get('/customers', authenticate, adminOnly, getCustomers);
 
 export default router;

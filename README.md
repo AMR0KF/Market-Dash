@@ -1,122 +1,183 @@
-# MarketDash
+﻿# MarketDash
 
-MarketDash is a modern, full-stack grocery delivery application built with React, Node.js, Express, and PostgreSQL.
+> Full-stack grocery delivery platform and administrative command center built with React, React Native (Expo), Node.js (Express), Prisma ORM, and PostgreSQL.
+
+---
+
+## Architecture Overview
+
+MarketDash is an end-to-end e-commerce and logistics solution spanning desktop web, responsive mobile interfaces, and a high-throughput REST backend.
+
+`
+                  ┌───────────────────────────────┐
+                  │    MarketDash Web Client      │
+                  │   (React + TypeScript + Vite) │
+                  └───────────────┬───────────────┘
+                                  │
+┌──────────────────────────────┐  │   ┌──────────────────────────────┐
+│     Mobile App (Expo)        ├──┼───┤   Admin Operations Portal    │
+│ (React Native + NativeWind)  │  │   │  (Catalog, Orders, Metrics)  │
+└──────────────────────────────┘  │   └──────────────────────────────┘
+                                  ▼
+                  ┌───────────────────────────────┐
+                  │      Express REST API         │
+                  │    (Auth, Orders, Products)   │
+                  └───────────────┬───────────────┘
+                                  │
+                                  ▼
+                  ┌───────────────────────────────┐
+                  │      Prisma ORM Layer         │
+                  │   PostgreSQL / SQLite Storage │
+                  └───────────────────────────────┘
+`
+
+---
 
 ## Features
 
-- **Storefront**: Browse categories, view products, add to cart, and checkout.
-- **User Accounts**: Registration, login, order history, and saved addresses.
-- **Admin Dashboard**: Manage products, categories, orders, and view customer statistics.
-- **Responsive Design**: Works seamlessly on desktop and mobile devices.
+### 🛒 Storefront & Customer Experience
+- **Interactive Catalog**: Real-time product filtering, category navigation, and fuzzy search.
+- **Cart & Checkout Lifecycle**: Persistent basket synchronization, promo calculations, and address validation.
+- **Order Tracking**: Multi-stage delivery state transitions (PENDING → CONFIRMED → OUT_FOR_DELIVERY → DELIVERED).
+- **User Authentication**: Secure JWT-based registration, login, and profile history.
+
+### 📊 Admin Operations Dashboard
+- **Catalog Management**: Add, update, and soft-delete products with instant image uploading and stock level tracking.
+- **Order Dispatching**: Review incoming customer orders, manage fulfillment statuses, and inspect buyer metrics.
+- **Category Hierarchy**: Organize inventory taxonomy dynamically without database migrations.
+
+### 📱 Mobile Experience (Expo / React Native)
+- Dedicated native mobile interface built with Expo and NativeWind for fast on-the-go browsing and ordering.
+
+---
 
 ## Tech Stack
 
-- **Frontend**: React, TypeScript, Vite, Tailwind CSS, Zustand, React Query, React Router, Lucide Icons.
-- **Backend**: Node.js, Express, TypeScript, Prisma ORM, PostgreSQL, JSON Web Tokens (JWT), bcrypt.
+| Layer | Technologies |
+| :--- | :--- |
+| **Frontend (Web)** | React 19, TypeScript, Vite, Tailwind CSS, Zustand, TanStack Query, Lucide Icons |
+| **Mobile** | React Native, Expo, NativeWind, TypeScript |
+| **Backend API** | Node.js, Express, TypeScript, Express Validator, bcrypt, JSON Web Tokens (JWT) |
+| **Database & ORM** | PostgreSQL 15+ (Production) / SQLite (Dev), Prisma ORM |
+| **DevOps & Containers** | Docker, Docker Compose, pgAdmin |
 
-## Prerequisites
+---
 
-- Node.js (v18 or higher)
-- PostgreSQL (v15 or higher)
-- Docker and Docker Compose (optional, for containerized deployment)
+## Getting Started
 
-## Local Development Setup
+### 1. Prerequisites
+- **Node.js** (v18 or higher)
+- **PostgreSQL** (v15+) or **Docker**
 
-### 1. Clone the repository
+### 2. Environment Setup
 
-```bash
-git clone <repository-url>
-cd marketdash
-```
+Copy example environment configurations:
+`ash
+cp .env.example .env
+cp server/.env.example server/.env
+`
 
-### 2. Environment Variables
+**Root .env Configuration:**
+`env
+VITE_API_BASE_URL=http://localhost:4000/api
+VITE_APP_NAME=MarketDash
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/marketdash?schema=public
+JWT_SECRET=your-super-secret-jwt-key
+`
 
-Create `.env` files based on the provided examples.
-
-**Root directory (`/.env`):**
-```env
-VITE_API_BASE_URL="http://localhost:3000/api"
-VITE_APP_NAME="MarketDash"
-DATABASE_URL="postgresql://postgres:postgres@localhost:5432/marketdash?schema=public"
-JWT_SECRET="your-super-secret-jwt-key"
-```
-
-**Server directory (`/server/.env`):**
-```env
-DATABASE_URL="postgresql://postgres:postgres@localhost:5432/marketdash?schema=public"
-JWT_SECRET="your-super-secret-jwt-key-change-in-production"
-JWT_REFRESH_SECRET="your-super-secret-refresh-key-change-in-production"
-JWT_EXPIRES_IN="15m"
-JWT_REFRESH_EXPIRES_IN="7d"
+**Server server/.env Configuration:**
+`env
 PORT=4000
-UPLOAD_DIR="src/uploads"
-NODE_ENV="development"
-```
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/marketdash?schema=public
+JWT_SECRET=your-super-secret-jwt-key-change-in-production
+JWT_REFRESH_SECRET=your-super-secret-refresh-key-change-in-production
+JWT_EXPIRES_IN=15m
+JWT_REFRESH_EXPIRES_IN=7d
+NODE_ENV=development
+`
 
-### 3. Database Setup
+---
 
-Ensure PostgreSQL is running and the `marketdash` database exists.
+### 3. Database Initialization & Seeding
 
-```bash
+`ash
 cd server
 npm install
 npx prisma migrate dev --name init
 npx prisma db seed
-```
+cd ..
+`
 
-### 4. Run the Application
+Default seeded administrator credentials:
+- **Email**: dmin@marketdash.com
+- **Password**: dmin123
 
-**Run both frontend and backend concurrently (from the root directory):**
-```bash
+---
+
+### 4. Running the Development Servers
+
+**Web Storefront & Backend Server:**
+`ash
+# Install root dependencies
 npm install
+
+# Run backend API and frontend concurrently
 npm run dev
-```
+`
+- **Web Storefront**: http://localhost:3000
+- **API Server**: http://localhost:4000/api
+- **Admin Portal**: http://localhost:3000/admin/login
 
-The frontend will be available at `http://localhost:3000` and the backend API at `http://localhost:3000/api`.
+**Mobile App (Optional):**
+`ash
+cd mobile
+npm install
+npx expo start
+`
 
-## Default Admin Credentials
-
-After running the database seed (`npx prisma db seed`), an admin user is created automatically:
-
-- **Email**: admin@marketdash.com
-- **Password**: admin123
-
-You can use these credentials to log in to the admin dashboard at `/admin/login`.
+---
 
 ## Docker Deployment
 
-To run the entire stack (PostgreSQL, Backend Server, Frontend Client, and pgAdmin) using Docker Compose:
+To launch the full ecosystem (PostgreSQL, Backend API, Web Frontend, and pgAdmin) via container orchestration:
 
-```bash
+`ash
 docker-compose up -d --build
-```
+`
 
-- **Frontend**: `http://localhost:3000`
-- **Backend API**: `http://localhost:4000`
-- **pgAdmin**: `http://localhost:5050` (Login: admin@admin.com / admin)
+- **Frontend**: http://localhost:3000
+- **Backend API**: http://localhost:4000
+- **pgAdmin**: http://localhost:5050 (dmin@admin.com / dmin)
 
-## Folder Structure
+---
 
-```
-marketdash/
-├── prisma/                 # Prisma schema and migrations
-├── server/                 # Node.js/Express backend
+## Project Structure
+
+`
+Market-Dash/
+├── prisma/                 # Prisma schema definitions and database seeders
+│   ├── schema.prisma       # Data models (Users, Products, Orders, Cart)
+│   └── seed.ts             # Default catalog and admin user seeder
+├── server/                 # Express Node.js backend
 │   ├── src/
-│   │   ├── controllers/    # Route handlers
-│   │   ├── routes/         # API routes
-│   │   ├── middleware/     # Auth and error middleware
-│   │   ├── utils/          # Helper functions
-│   │   └── uploads/        # Uploaded images
-│   ├── Dockerfile          # Backend Docker config
+│   │   ├── controllers/    # Route controllers (Auth, Cart, Orders, Products)
+│   │   ├── middleware/     # JWT authentication and error handlers
+│   │   ├── routes/         # REST API endpoint definitions
+│   │   └── utils/          # Token generation and validation utilities
+│   ├── Dockerfile          # Backend containerization
 │   └── package.json
-├── src/                    # React frontend
-│   ├── admin/              # Admin dashboard components and pages
-│   ├── components/         # Reusable UI components
-│   ├── hooks/              # Custom React hooks
-│   ├── pages/              # Storefront pages
-│   ├── store/              # Zustand state management
-│   └── api.ts              # Axios instance setup
-├── Dockerfile              # Frontend Docker config
+├── src/                    # React Web Frontend
+│   ├── admin/              # Admin management portal (Catalog, Orders, Analytics)
+│   ├── components/         # Atomic UI and layout components
+│   ├── pages/              # Customer storefront, checkout, and detail views
+│   ├── store/              # Zustand global client state (Auth, Cart)
+│   └── api/                # Axios API client bindings
+├── mobile/                 # React Native (Expo) mobile application
 ├── docker-compose.yml      # Multi-container orchestration
 └── package.json            # Root configuration
-```
+`
+
+---
+
+## License
+MIT License.

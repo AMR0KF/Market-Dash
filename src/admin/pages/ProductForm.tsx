@@ -17,6 +17,8 @@ const productSchema = z.object({
   compareAtPrice: z.any().transform(v => v ? Number(v) : undefined).optional(),
   stock: z.any().transform(Number),
   unit: z.string().min(1, 'Unit is required'),
+  minQuantity: z.any().transform(v => v ? Number(v) : 1.0).optional(),
+  stepQuantity: z.any().transform(v => v ? Number(v) : 1.0).optional(),
   weight: z.any().transform(v => v ? Number(v) : undefined).optional(),
   categoryId: z.string().min(1, 'Category is required'),
   isActive: z.boolean().optional(),
@@ -40,6 +42,8 @@ export default function ProductForm() {
       isFeatured: false,
       stock: 0,
       price: 0,
+      minQuantity: 1,
+      stepQuantity: 1,
     }
   });
 
@@ -71,6 +75,8 @@ export default function ProductForm() {
             compareAtPrice: p.compareAtPrice || undefined,
             stock: p.stock,
             unit: p.unit,
+            minQuantity: p.minQuantity || 1,
+            stepQuantity: p.stepQuantity || 1,
             weight: p.weight || undefined,
             categoryId: p.categoryId,
             isActive: p.isActive !== false, // Default true if undefined
@@ -266,14 +272,61 @@ export default function ProductForm() {
             </div>
           </div>
 
-          {/* Shipping */}
+          {/* Shipping & Weighted Units */}
           <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 space-y-6">
-            <h2 className="text-lg font-bold text-gray-900">Shipping</h2>
+            <h2 className="text-lg font-bold text-gray-900">Unit & Measurement Rules</h2>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Unit (e.g. 1kg, 500ml, pack of 6)</label>
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Quick Unit Presets</p>
+              <div className="flex flex-wrap gap-2 mb-4">
+                <button
+                  type="button"
+                  onClick={() => { setValue('unit', 'kg'); setValue('minQuantity', 0.5); setValue('stepQuantity', 0.25); }}
+                  className="px-3 py-1.5 bg-yellow-50 text-yellow-700 border border-yellow-200 text-xs font-semibold rounded-lg hover:bg-yellow-100 transition-colors"
+                >
+                  By Weight (kg — 0.5 min / 0.25 step)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setValue('unit', 'g'); setValue('minQuantity', 250); setValue('stepQuantity', 100); }}
+                  className="px-3 py-1.5 bg-yellow-50 text-yellow-700 border border-yellow-200 text-xs font-semibold rounded-lg hover:bg-yellow-100 transition-colors"
+                >
+                  By Weight (g — 250 min / 100 step)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setValue('unit', 'lb'); setValue('minQuantity', 0.5); setValue('stepQuantity', 0.25); }}
+                  className="px-3 py-1.5 bg-yellow-50 text-yellow-700 border border-yellow-200 text-xs font-semibold rounded-lg hover:bg-yellow-100 transition-colors"
+                >
+                  By Weight (lb — 0.5 min / 0.25 step)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setValue('unit', '1 pc'); setValue('minQuantity', 1); setValue('stepQuantity', 1); }}
+                  className="px-3 py-1.5 bg-gray-50 text-gray-700 border border-gray-200 text-xs font-semibold rounded-lg hover:bg-gray-100 transition-colors"
+                >
+                  By Piece (1 pc — 1 min / 1 step)
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Unit Label (e.g. kg, g, pack, 1 pc)</label>
               <input {...register('unit')} className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 outline-none" />
               {errors.unit && <p className="text-red-500 text-xs mt-1">{errors.unit.message}</p>}
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Starting Min Qty</label>
+                <input type="number" step="0.05" {...register('minQuantity')} className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 outline-none" />
+                <p className="text-xs text-gray-400 mt-1">e.g. 0.5 for 0.5kg</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Increment Step (+/-)</label>
+                <input type="number" step="0.05" {...register('stepQuantity')} className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 outline-none" />
+                <p className="text-xs text-gray-400 mt-1">e.g. 0.25 step</p>
+              </div>
             </div>
 
             <div>

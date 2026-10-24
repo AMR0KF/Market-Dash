@@ -13,7 +13,7 @@ export default function OrderDetail() {
     queryKey: ['admin-order', id],
     queryFn: async () => {
       try {
-        const { data } = await api.get(`/orders/${id}`);
+        const { data } = await api.get(`/orders/admin/${id}`);
         return data.data;
       } catch (error) {
         // Mock fallback
@@ -60,7 +60,7 @@ export default function OrderDetail() {
     
     setIsUpdating(true);
     try {
-      await api.put(`/orders/${id}/status`, { status: newStatus });
+      await api.put(`/orders/admin/${id}/status`, { status: newStatus });
       refetch();
       alert('Order status updated successfully');
     } catch (error) {
@@ -201,7 +201,7 @@ export default function OrderDetail() {
               <Clock className="w-5 h-5 text-gray-400" /> Order Timeline
             </h2>
             <div className="space-y-6 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-300 before:to-transparent">
-              {order.timeline.map((event: any, index: number) => (
+              {order.timeline?.map((event: any, index: number) => (
                 <div key={index} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
                   <div className="flex items-center justify-center w-10 h-10 rounded-full border border-white bg-slate-300 group-[.is-active]:bg-green-500 text-white shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10">
                     <CheckCircle className="w-5 h-5" />

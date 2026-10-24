@@ -4,7 +4,7 @@ import { ShoppingBag, Trash2, Plus, Minus, ArrowRight } from 'lucide-react';
 import EmptyState from '../components/ui/EmptyState';
 
 export default function CartPage() {
-  const { items, subtotal, estimatedDeliveryFee, estimatedTotal, handleUpdateItem, handleRemoveItem, handleClearCart } = useCart();
+  const { items, subtotal, estimatedDeliveryFee, estimatedTotal, handleUpdateItem, handleRemoveItem, handleClearCart, isPending } = useCart();
   const navigate = useNavigate();
 
   if (items.length === 0) {
@@ -69,24 +69,26 @@ export default function CartPage() {
                   <div className="flex items-center gap-4">
                     <div className="flex items-center border border-gray-300 rounded-lg bg-white h-[44px]">
                       <button 
-                        onClick={() => handleUpdateItem(item.id, item.quantity - 1)}
-                        className="w-10 h-full flex items-center justify-center text-gray-500 hover:text-green-600 hover:bg-green-50 rounded-l-lg transition-colors"
+                        onClick={() => !isPending(item.id) && handleUpdateItem(item.id, item.quantity - 1)}
+                        disabled={isPending(item.id)}
+                        className="w-10 h-full flex items-center justify-center text-gray-500 hover:text-green-600 hover:bg-green-50 rounded-l-lg transition-colors disabled:opacity-40"
                       >
                         <Minus size={18} />
                       </button>
                       <span className="w-10 text-center font-bold">{item.quantity}</span>
                       <button 
-                        onClick={() => handleUpdateItem(item.id, item.quantity + 1)}
-                        className="w-10 h-full flex items-center justify-center text-gray-500 hover:text-green-600 hover:bg-green-50 rounded-r-lg transition-colors"
-                        disabled={item.quantity >= item.product.stock}
+                        onClick={() => !isPending(item.id) && handleUpdateItem(item.id, item.quantity + 1)}
+                        className="w-10 h-full flex items-center justify-center text-gray-500 hover:text-green-600 hover:bg-green-50 rounded-r-lg transition-colors disabled:opacity-40"
+                        disabled={item.quantity >= item.product.stock || isPending(item.id)}
                       >
                         <Plus size={18} />
                       </button>
                     </div>
                     
                     <button 
-                      onClick={() => handleRemoveItem(item.id)}
-                      className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+                      onClick={() => !isPending(item.id) && handleRemoveItem(item.id)}
+                      disabled={isPending(item.id)}
+                      className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center disabled:opacity-40"
                       title="Remove item"
                     >
                       <Trash2 size={20} />
@@ -120,7 +122,7 @@ export default function CartPage() {
               </div>
               {estimatedDeliveryFee > 0 && (
                 <p className="text-xs text-gray-400 mt-1">
-                  Free delivery on orders over $50,000
+                  Free delivery on orders over $50
                 </p>
               )}
             </div>

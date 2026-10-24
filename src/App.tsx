@@ -17,14 +17,8 @@ import RegisterPage from './pages/RegisterPage';
 // Admin
 import AdminApp from './admin/AdminApp';
 
-// Protected Route Wrapper
+// Protected Route Wrapper (Drop sign in mode: always allow access)
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { isAuthenticated } = useAuthStore();
-  
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
-  }
-
   return <>{children}</>;
 };
 

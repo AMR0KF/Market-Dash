@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import express from 'express';
 import { createServer as createViteServer } from 'vite';
 import cors from 'cors';
@@ -33,7 +34,11 @@ async function startServer() {
   app.use('/api/cart', cartRoutes);
   app.use('/api/orders', orderRoutes);
   app.use('/api/users', userRoutes);
-  app.use('/api/dev', devRoutes);
+  
+  if (process.env.NODE_ENV !== 'production') {
+    app.use('/api/dev', devRoutes);
+  }
+  
   app.use('/api/admin', adminRoutes);
 
   // Vite middleware for development

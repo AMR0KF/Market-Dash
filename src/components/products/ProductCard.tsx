@@ -1,6 +1,9 @@
+import React, { useState, useEffect } from 'react';
 import { Plus, Minus } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { motion, AnimatePresence } from 'motion/react';
 import { useCart } from '../../hooks/useCart';
+import { formatQuantityDisplay } from '../../utils/format';
 
 interface Product {
   id: string;
@@ -10,6 +13,8 @@ interface Product {
   images: string[];
   stock: number;
   unit: string;
+  minQuantity?: number;
+  stepQuantity?: number;
   category?: { name: string };
 }
 
@@ -18,15 +23,50 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ product }: ProductCardProps) {
-  const { items, handleAddItem, handleUpdateItem } = useCart();
+  const { items, handleAddItem, handleUpdateItem, isPending } = useCart();
   
   const cartItem = items.find(item => item.productId === product.id);
   const quantityInCart = cartItem ? cartItem.quantity : 0;
+  
+  const [optimisticQty, setOptimisticQty] = useState<number | null>(null);
+
+  // Sync optimistic quantity when cart item quantity updates from server
+  useEffect(() => {
+    setOptimisticQty(null);
+  }, [quantityInCart]);
+
+  const displayQty = optimisticQty !== null ? optimisticQty : quantityInCart;
   const isOutOfStock = product.stock <= 0;
   const hasDiscount = product.compareAtPrice && product.compareAtPrice > product.price;
+  const isItemPending = isPending(product.id) || (cartItem ? isPending(cartItem.id) : false);
+
+  const minQty = product.minQuantity || 1;
+  const stepQty = product.stepQuantity || 1;
+
+  const handlePlus = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (isItemPending) return;
+    if (displayQty === 0) {
+      setOptimisticQty(minQty);
+      handleAddItem(product.id, minQty);
+    } else {
+      const nextQty = Number((displayQty + stepQty).toFixed(2));
+      setOptimisticQty(nextQty);
+      if (cartItem) handleUpdateItem(cartItem.id, nextQty);
+    }
+  };
+
+  const handleMinus = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (isItemPending) return;
+    const nextQty = Number((displayQty - stepQty).toFixed(2));
+    const finalQty = nextQty < minQty - 0.001 ? 0 : nextQty;
+    setOptimisticQty(finalQty);
+    if (cartItem) handleUpdateItem(cartItem.id, finalQty);
+  };
 
   return (
-    <div className="w-[160px] flex-shrink-0 bg-white rounded-[12px] border border-gray-200 overflow-hidden flex flex-col shadow-sm">
+    <div className="w-[165px] flex-shrink-0 bg-white rounded-[12px] border border-gray-200 overflow-hidden flex flex-col shadow-sm">
       <Link to={`/product/${product.id}`} className="block w-full aspect-square bg-gray-100 relative overflow-hidden">
         <img 
           src={product.images?.[0] || '/placeholder.png'} 
@@ -35,72 +75,88 @@ export default function ProductCard({ product }: ProductCardProps) {
           className="w-full h-full object-cover"
         />
         {hasDiscount && (
-          <div className="absolute top-[8px] left-[8px] bg-red-600 text-gray-900 text-[11px] font-[600] px-[6px] py-[2px] rounded-[4px]">
+          <div className="absolute top-[8px] left-[8px] bg-rose-500 text-white text-[10px] font-[800] px-[7px] py-[2px] rounded-full shadow-sm tracking-wide uppercase">
             Sale
           </div>
         )}
       </Link>
 
-      <div className="p-[8px] flex flex-col flex-1">
-        <Link to={`/product/${product.id}`}>
-          <h3 className="text-[14px] font-[600] text-gray-900 line-clamp-2 min-h-[40px] leading-tight">
-            {product.name}
-          </h3>
-        </Link>
+      <div className="p-[8px] flex flex-col flex-1 justify-between">
+        <div>
+          <Link to={`/product/${product.id}`}>
+            <h3 className="text-[14px] font-[600] text-gray-900 line-clamp-2 min-h-[40px] leading-tight">
+              {product.name}
+            </h3>
+          </Link>
+          
+          <p className="text-[12px] font-[400] text-gray-500 mt-[2px]">
+            {product.unit}
+          </p>
+        </div>
         
-        <p className="text-[12px] font-[400] text-gray-500 mt-[2px]">
-          {product.unit}
-        </p>
-        
-        <div className="mt-[8px] flex items-center justify-between">
-          <div className="flex flex-col justify-center">
-            <span className="text-[16px] font-[700] text-gray-900 leading-none">
+        <div className="mt-[8px] flex items-center justify-between gap-1 min-h-[32px]">
+          <div className="flex flex-wrap items-baseline gap-x-1.5 min-w-0 flex-1 pr-1">
+            <span className="text-[15px] font-[800] text-gray-900 leading-tight">
               ${product.price.toFixed(2)}
             </span>
             {hasDiscount && (
-              <span className="text-[12px] text-gray-400 line-through leading-none mt-[2px]">
+              <span className="text-[11px] text-gray-400 line-through leading-tight">
                 ${product.compareAtPrice!.toFixed(2)}
               </span>
             )}
           </div>
 
-          {quantityInCart > 0 ? (
-            <div className="flex items-center bg-green-50 rounded-full h-[32px] px-[4px]">
-              <button 
-                onClick={(e) => {
-                  e.preventDefault();
-                  handleUpdateItem(cartItem!.id, quantityInCart - 1);
-                }}
-                className="w-[24px] h-[24px] flex items-center justify-center text-green-600"
-              >
-                <Minus size={16} strokeWidth={3} />
-              </button>
-              <span className="text-[13px] font-[600] text-green-600 min-w-[16px] text-center">
-                {quantityInCart}
-              </span>
-              <button 
-                onClick={(e) => {
-                  e.preventDefault();
-                  handleUpdateItem(cartItem!.id, quantityInCart + 1);
-                }}
-                disabled={isOutOfStock || quantityInCart >= product.stock}
-                className="w-[24px] h-[24px] flex items-center justify-center text-green-600 disabled:opacity-50"
-              >
-                <Plus size={16} strokeWidth={3} />
-              </button>
-            </div>
-          ) : (
-            <button 
-              onClick={(e) => {
-                e.preventDefault();
-                handleAddItem(product.id, 1);
-              }}
-              disabled={isOutOfStock}
-              className="w-[32px] h-[32px] rounded-full bg-green-50 text-green-600 flex items-center justify-center disabled:opacity-50 disabled:bg-gray-100 disabled:text-gray-400"
+          <motion.div
+            layout
+            initial={false}
+            animate={{
+              backgroundColor: displayQty > 0 ? '#121212' : '#E5C158',
+            }}
+            transition={{ duration: 0.14, ease: 'easeOut' }}
+            className={`relative flex items-center ${displayQty > 0 ? 'justify-between px-1.5 shadow-md shadow-black/40' : 'justify-center'} rounded-full h-[30px] p-[2px] flex-shrink-0 select-none`}
+          >
+            <AnimatePresence initial={false}>
+              {displayQty > 0 && (
+                <motion.button
+                  key="minus"
+                  initial={{ opacity: 0, scale: 0.5 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.5 }}
+                  transition={{ duration: 0.12, ease: 'easeOut' }}
+                  onClick={handleMinus}
+                  disabled={isItemPending}
+                  className="text-[#E5C158] hover:text-yellow-600 font-bold active:scale-85 transition-transform disabled:opacity-40 flex-shrink-0 z-10 p-1 outline-none focus:outline-none focus:ring-0 focus-visible:outline-none"
+                >
+                  <Minus size={15} color="#E5C158" strokeWidth={3} />
+                </motion.button>
+              )}
+            </AnimatePresence>
+
+            <AnimatePresence initial={false}>
+              {displayQty > 0 && (
+                <motion.span
+                  key="count"
+                  initial={{ opacity: 0, scale: 0.4 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.4 }}
+                  transition={{ duration: 0.1 }}
+                  className="text-[13px] font-[700] text-[#E5C158] dark:text-[#E5C158] text-center whitespace-nowrap px-1.5 pointer-events-none select-none"
+                >
+                  {formatQuantityDisplay(displayQty, product.unit)}
+                </motion.span>
+              )}
+            </AnimatePresence>
+
+            <motion.button
+              layout
+              key="plus"
+              onClick={handlePlus}
+              disabled={isOutOfStock || (displayQty > 0 && displayQty >= product.stock) || isItemPending}
+              className={`${displayQty > 0 ? 'text-[#E5C158] hover:text-yellow-600 p-1' : 'w-[26px] h-[26px] rounded-full bg-[#E5C158] text-gray-900 flex items-center justify-center'} font-bold active:scale-85 transition-transform disabled:opacity-40 flex-shrink-0 z-10 outline-none focus:outline-none focus:ring-0 focus-visible:outline-none`}
             >
-              <Plus size={20} strokeWidth={2.5} />
-            </button>
-          )}
+              <Plus size={displayQty === 0 ? 15 : 15} color={displayQty === 0 ? '#121212' : '#E5C158'} strokeWidth={3} />
+            </motion.button>
+          </motion.div>
         </div>
       </div>
     </div>

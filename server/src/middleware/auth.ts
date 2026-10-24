@@ -1,36 +1,66 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+import { prisma } from '../prisma';
 
 export interface AuthRequest extends Request {
   user?: {
     id: string;
     role: string;
+    email?: string;
+    name?: string;
   };
 }
 
-export const authenticate = (req: AuthRequest, res: Response, next: NextFunction): void => {
+export const authenticate = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      res.status(401).json({ success: false, message: 'Authentication required', data: null });
-      return;
+    const secret = process.env.JWT_SECRET || 'dev-secret-jwt-key-do-not-use-in-production';
+
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.split(' ')[1];
+      try {
+        const decoded = jwt.verify(token, secret) as { id: string; role: string };
+        req.user = decoded;
+        return next();
+      } catch (err) {
+        // Fall through to dev auto-login
+      }
     }
 
-    const token = authHeader.split(' ')[1];
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-super-secret-jwt-key') as { id: string; role: string };
-    
-    req.user = decoded;
+    // Drop sign-in bypass: Default to test user or admin
+    const isAdminRequest = req.originalUrl?.includes('/admin') || req.baseUrl?.includes('/admin') || req.path?.includes('/admin');
+
+    if (isAdminRequest) {
+      const admin = await prisma.adminUser.findFirst();
+      req.user = {
+        id: admin?.id || 'admin-super',
+        role: admin?.role || 'SUPER_ADMIN'
+      };
+    } else {
+      const defaultUser = await prisma.user.findFirst({
+        where: { email: 'alex.morgan@example.com' }
+      }) || await prisma.user.findFirst();
+
+      req.user = {
+        id: defaultUser?.id || 'user-alex-morgan',
+        role: 'CUSTOMER'
+      };
+    }
+
     next();
   } catch (error) {
-    res.status(401).json({ success: false, message: 'Invalid or expired token', data: null });
-    return;
+    req.user = { id: 'user-alex-morgan', role: 'CUSTOMER' };
+    next();
   }
 };
 
 export const adminOnly = (req: AuthRequest, res: Response, next: NextFunction): void => {
   if (!req.user || (req.user.role !== 'SUPER_ADMIN' && req.user.role !== 'MANAGER')) {
-    res.status(403).json({ success: false, message: 'Admin access required', data: null });
-    return;
+    // Drop sign-in mode: automatically permit as Super Admin
+    req.user = {
+      id: 'admin-super',
+      role: 'SUPER_ADMIN'
+    };
   }
   next();
 };

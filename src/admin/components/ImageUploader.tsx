@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import { Upload, X, Image as ImageIcon } from 'lucide-react';
+import api from '../../api';
 
 interface ImageUploaderProps {
   images: string[];
@@ -35,11 +36,32 @@ export default function ImageUploader({ images, onChange }: ImageUploaderProps) 
     }
   };
 
-  const handleFiles = (files: File[]) => {
-    // In a real app, you would upload these files to a server or cloud storage
-    // For this demo, we'll just create object URLs
-    const newImages = files.map(file => URL.createObjectURL(file));
-    onChange([...images, ...newImages]);
+  const [isUploading, setIsUploading] = useState(false);
+
+  const handleFiles = async (files: File[]) => {
+    setIsUploading(true);
+    const uploadedUrls: string[] = [];
+
+    for (const file of files) {
+      try {
+        const formData = new FormData();
+        formData.append('image', file);
+
+        const res = await api.post('/products/upload', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+
+        if (res.data?.data?.url) {
+          uploadedUrls.push(res.data.data.url);
+        }
+      } catch (e) {
+        console.warn('Image upload failed, fallback to local URL preview', e);
+        uploadedUrls.push(URL.createObjectURL(file));
+      }
+    }
+
+    setIsUploading(false);
+    onChange([...images, ...uploadedUrls]);
   };
 
   const removeImage = (indexToRemove: number) => {

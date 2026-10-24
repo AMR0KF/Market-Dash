@@ -13,7 +13,7 @@ export default function Dashboard() {
     queryKey: ['admin-stats'],
     queryFn: async () => {
       try {
-        const { data } = await api.get('/orders/stats');
+        const { data } = await api.get('/orders/admin/stats');
         return data.data;
       } catch (error) {
         // Mock data fallback if endpoint doesn't exist yet

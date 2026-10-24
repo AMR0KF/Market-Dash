@@ -47,8 +47,9 @@ export const addToCart = async (req: AuthRequest, res: Response): Promise<void> 
   try {
     const userId = req.user!.id;
     const { productId, quantity } = req.body;
+    const parsedQty = parseFloat(quantity);
 
-    if (!productId || !quantity || quantity <= 0) {
+    if (!productId || isNaN(parsedQty) || parsedQty <= 0) {
       res.status(400).json({ success: false, message: 'Invalid product or quantity', data: null });
       return;
     }
@@ -65,7 +66,7 @@ export const addToCart = async (req: AuthRequest, res: Response): Promise<void> 
     }
 
     const existingItem = cart.items.find(item => item.productId === productId);
-    const newQuantity = existingItem ? existingItem.quantity + quantity : quantity;
+    const newQuantity = existingItem ? existingItem.quantity + parsedQty : parsedQty;
 
     if (product.stock < newQuantity) {
       res.status(400).json({ success: false, message: 'Insufficient stock', data: null });
@@ -79,7 +80,7 @@ export const addToCart = async (req: AuthRequest, res: Response): Promise<void> 
       });
     } else {
       await prisma.cartItem.create({
-        data: { cartId: cart.id, productId, quantity }
+        data: { cartId: cart.id, productId, quantity: parsedQty }
       });
     }
 
@@ -94,6 +95,7 @@ export const updateCartItem = async (req: AuthRequest, res: Response): Promise<v
     const userId = req.user!.id;
     const { cartItemId } = req.params;
     const { quantity } = req.body;
+    const parsedQty = parseFloat(quantity);
 
     const cartItem = await prisma.cartItem.findUnique({
       where: { id: cartItemId },
@@ -187,7 +189,7 @@ export const getCartSummary = async (req: AuthRequest, res: Response): Promise<v
       });
     }
 
-    const estimatedDeliveryFee = subtotal >= 50000 ? 0 : (subtotal > 0 ? 5000 : 0);
+    const estimatedDeliveryFee = subtotal >= 50 ? 0 : (subtotal > 0 ? 5 : 0);
     const estimatedTotal = subtotal + estimatedDeliveryFee;
 
     res.status(200).json({

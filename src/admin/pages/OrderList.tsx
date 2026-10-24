@@ -15,10 +15,10 @@ function OrderListContent() {
     queryKey: ['admin-orders', searchTerm, statusFilter, dateRange],
     queryFn: async () => {
       try {
-        const { data } = await api.get('/orders', {
+        const { data } = await api.get('/orders/admin/all', {
           params: { search: searchTerm, status: statusFilter, dateRange }
         });
-        return data.data;
+        return Array.isArray(data.data) ? data.data : (data.data?.data || []);
       } catch (error) {
         // Mock fallback
         return [

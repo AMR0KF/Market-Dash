@@ -11,12 +11,8 @@ import OrderList from './pages/OrderList';
 import OrderDetail from './pages/OrderDetail';
 import CustomerList from './pages/CustomerList';
 
+// Admin Protected Route Wrapper (Drop sign in mode: always allow access)
 const AdminProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  // const { token } = useAdminStore();
-  // if (!token) {
-  //   return <Navigate to="/admin/login" replace />;
-  // }
-  // Bypassing login just for now as requested
   return <>{children}</>;
 };
 

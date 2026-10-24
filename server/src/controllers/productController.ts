@@ -98,8 +98,8 @@ export const getFeaturedProducts = async (req: Request, res: Response): Promise<
 
 export const searchProducts = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { query } = req.query;
-    if (!query) {
+    const searchQuery = (req.query.query || req.query.q) as string;
+    if (!searchQuery) {
       res.status(400).json({ success: false, message: 'Search query is required', data: null });
       return;
     }
@@ -108,9 +108,9 @@ export const searchProducts = async (req: Request, res: Response): Promise<void>
       where: {
         isActive: true,
         OR: [
-          { name: { contains: query as string } },
-          { description: { contains: query as string } },
-          { sku: { contains: query as string } }
+          { name: { contains: searchQuery } },
+          { description: { contains: searchQuery } },
+          { sku: { contains: searchQuery } }
         ]
       },
       include: { category: true },
@@ -130,11 +130,25 @@ export const searchProducts = async (req: Request, res: Response): Promise<void>
 
 export const createProduct = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { name, description, price, compareAtPrice, sku, barcode, stock, unit, images, categoryId, isActive, isFeatured, weight } = req.body;
+    const { name, description, price, compareAtPrice, sku, barcode, stock, unit, minQuantity, stepQuantity, images, categoryId, isActive, isFeatured, weight } = req.body;
 
     const product = await prisma.product.create({
       data: {
-        name, description, price, compareAtPrice, sku, barcode, stock, unit, images, categoryId, isActive, isFeatured, weight
+        name,
+        description,
+        price,
+        compareAtPrice,
+        sku,
+        barcode,
+        stock,
+        unit,
+        minQuantity: minQuantity ? parseFloat(minQuantity) : 1.0,
+        stepQuantity: stepQuantity ? parseFloat(stepQuantity) : 1.0,
+        images,
+        categoryId,
+        isActive,
+        isFeatured,
+        weight
       }
     });
 
@@ -147,12 +161,26 @@ export const createProduct = async (req: Request, res: Response): Promise<void> 
 export const updateProduct = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
-    const { name, description, price, compareAtPrice, sku, barcode, stock, unit, images, categoryId, isActive, isFeatured, weight } = req.body;
+    const { name, description, price, compareAtPrice, sku, barcode, stock, unit, minQuantity, stepQuantity, images, categoryId, isActive, isFeatured, weight } = req.body;
 
     const product = await prisma.product.update({
       where: { id },
       data: {
-        name, description, price, compareAtPrice, sku, barcode, stock, unit, images, categoryId, isActive, isFeatured, weight
+        name,
+        description,
+        price,
+        compareAtPrice,
+        sku,
+        barcode,
+        stock,
+        unit,
+        ...(minQuantity !== undefined && { minQuantity: parseFloat(minQuantity) }),
+        ...(stepQuantity !== undefined && { stepQuantity: parseFloat(stepQuantity) }),
+        images,
+        categoryId,
+        isActive,
+        isFeatured,
+        weight
       }
     });
 

@@ -12,6 +12,9 @@
 - Sale badge: #E53935 background, white text
 - Border: #EEEEEE
 
+## Theme Shape & Corner Radius
+- **Square-Cornered Aesthetic**: Theme is styled more square than rounded. Elements (cards, buttons, containers, search bars, pills) use lightly rounded corners (`borderRadius: 6px` to `8px`) to appear crisp and square-cornered rather than fully rounded stadium shapes.
+
 ## Typography
 - Product name: 14px, font-weight 600, color #1A1A1A, max 2 lines (line-clamp-2)
 - Product unit: 12px, font-weight 400, color #6B7280

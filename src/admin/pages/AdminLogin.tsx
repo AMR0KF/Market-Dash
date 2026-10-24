@@ -17,13 +17,27 @@ export default function AdminLogin() {
     setError('');
 
     try {
-      // Bypassing real login for now
-      setTimeout(() => {
-        login({ admin: { email }, token: 'fake-admin-token' });
-        navigate('/admin/dashboard');
-      }, 500);
+      const res = await fetch('/api/auth/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || 'Invalid admin credentials');
+      }
+
+      login({
+        admin: data.data.user,
+        token: data.data.accessToken,
+      });
+
+      navigate('/admin/dashboard');
     } catch (err: any) {
       setError(err.message || 'Login failed');
+    } finally {
       setIsLoading(false);
     }
   };

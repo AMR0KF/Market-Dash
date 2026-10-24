@@ -11,27 +11,19 @@ RUN npm ci
 # Copy source code
 COPY . .
 
-# Generate Prisma client and build
+# Generate Prisma client
 RUN npx prisma generate
-RUN npm run build
 
 # Production stage
 FROM node:18-alpine
 
 WORKDIR /app
 
-# Copy package files and install production dependencies only
-COPY package*.json ./
-RUN npm ci --only=production
-
-# Copy built artifacts and prisma schema
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
+# Copy application files
+COPY --from=builder /app ./
 
 # Create uploads directory
-RUN mkdir -p src/uploads
+RUN mkdir -p server/src/uploads
 
 EXPOSE 4000
 
