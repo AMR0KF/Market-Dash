@@ -1,4 +1,4 @@
-﻿# MarketDash
+# MarketDash
 
 > Full-stack grocery delivery platform and administrative command center built with React, React Native (Expo), Node.js (Express), Prisma ORM, and PostgreSQL.
 
@@ -8,7 +8,7 @@
 
 MarketDash is an end-to-end e-commerce and logistics solution spanning desktop web, responsive mobile interfaces, and a high-throughput REST backend.
 
-`
+```text
                   ┌───────────────────────────────┐
                   │    MarketDash Web Client      │
                   │   (React + TypeScript + Vite) │
@@ -29,7 +29,7 @@ MarketDash is an end-to-end e-commerce and logistics solution spanning desktop w
                   │      Prisma ORM Layer         │
                   │   PostgreSQL / SQLite Storage │
                   └───────────────────────────────┘
-`
+```
 
 ---
 
@@ -38,7 +38,7 @@ MarketDash is an end-to-end e-commerce and logistics solution spanning desktop w
 ### 🛒 Storefront & Customer Experience
 - **Interactive Catalog**: Real-time product filtering, category navigation, and fuzzy search.
 - **Cart & Checkout Lifecycle**: Persistent basket synchronization, promo calculations, and address validation.
-- **Order Tracking**: Multi-stage delivery state transitions (PENDING → CONFIRMED → OUT_FOR_DELIVERY → DELIVERED).
+- **Order Tracking**: Multi-stage delivery state transitions (`PENDING` → `CONFIRMED` → `OUT_FOR_DELIVERY` → `DELIVERED`).
 - **User Authentication**: Secure JWT-based registration, login, and profile history.
 
 ### 📊 Admin Operations Dashboard
@@ -72,68 +72,68 @@ MarketDash is an end-to-end e-commerce and logistics solution spanning desktop w
 ### 2. Environment Setup
 
 Copy example environment configurations:
-`ash
+```bash
 cp .env.example .env
 cp server/.env.example server/.env
-`
+```
 
-**Root .env Configuration:**
-`env
-VITE_API_BASE_URL=http://localhost:4000/api
-VITE_APP_NAME=MarketDash
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/marketdash?schema=public
-JWT_SECRET=your-super-secret-jwt-key
-`
+**Root `.env` Configuration:**
+```env
+VITE_API_BASE_URL="http://localhost:4000/api"
+VITE_APP_NAME="MarketDash"
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/marketdash?schema=public"
+JWT_SECRET="your-super-secret-jwt-key"
+```
 
-**Server server/.env Configuration:**
-`env
+**Server `server/.env` Configuration:**
+```env
 PORT=4000
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/marketdash?schema=public
-JWT_SECRET=your-super-secret-jwt-key-change-in-production
-JWT_REFRESH_SECRET=your-super-secret-refresh-key-change-in-production
-JWT_EXPIRES_IN=15m
-JWT_REFRESH_EXPIRES_IN=7d
-NODE_ENV=development
-`
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/marketdash?schema=public"
+JWT_SECRET="your-super-secret-jwt-key-change-in-production"
+JWT_REFRESH_SECRET="your-super-secret-refresh-key-change-in-production"
+JWT_EXPIRES_IN="15m"
+JWT_REFRESH_EXPIRES_IN="7d"
+NODE_ENV="development"
+```
 
 ---
 
 ### 3. Database Initialization & Seeding
 
-`ash
+```bash
 cd server
 npm install
 npx prisma migrate dev --name init
 npx prisma db seed
 cd ..
-`
+```
 
 Default seeded administrator credentials:
-- **Email**: dmin@marketdash.com
-- **Password**: dmin123
+- **Email**: `admin@marketdash.com`
+- **Password**: `admin123`
 
 ---
 
 ### 4. Running the Development Servers
 
 **Web Storefront & Backend Server:**
-`ash
+```bash
 # Install root dependencies
 npm install
 
 # Run backend API and frontend concurrently
 npm run dev
-`
-- **Web Storefront**: http://localhost:3000
-- **API Server**: http://localhost:4000/api
-- **Admin Portal**: http://localhost:3000/admin/login
+```
+- **Web Storefront**: `http://localhost:3000`
+- **API Server**: `http://localhost:4000/api`
+- **Admin Portal**: `http://localhost:3000/admin/login`
 
 **Mobile App (Optional):**
-`ash
+```bash
 cd mobile
 npm install
 npx expo start
-`
+```
 
 ---
 
@@ -141,19 +141,19 @@ npx expo start
 
 To launch the full ecosystem (PostgreSQL, Backend API, Web Frontend, and pgAdmin) via container orchestration:
 
-`ash
+```bash
 docker-compose up -d --build
-`
+```
 
-- **Frontend**: http://localhost:3000
-- **Backend API**: http://localhost:4000
-- **pgAdmin**: http://localhost:5050 (dmin@admin.com / dmin)
+- **Frontend**: `http://localhost:3000`
+- **Backend API**: `http://localhost:4000`
+- **pgAdmin**: `http://localhost:5050` (`admin@admin.com` / `admin`)
 
 ---
 
 ## Project Structure
 
-`
+```text
 Market-Dash/
 ├── prisma/                 # Prisma schema definitions and database seeders
 │   ├── schema.prisma       # Data models (Users, Products, Orders, Cart)
@@ -175,7 +175,7 @@ Market-Dash/
 ├── mobile/                 # React Native (Expo) mobile application
 ├── docker-compose.yml      # Multi-container orchestration
 └── package.json            # Root configuration
-`
+```
 
 ---
 
